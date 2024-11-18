@@ -166,6 +166,7 @@ export default function CreateClaimCard({
         <div className="flex items-center justify-between gap-2 pb-4 max-sm:flex-col max-sm:items-start">
           <h1 className="text-lg font-bold">{t("check_policy_eligibility")}</h1>
           <ButtonV2
+            id="edit-insurance-policy"
             className="w-fit"
             onClick={() => setShowAddPolicy(true)}
             ghost
