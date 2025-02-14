@@ -4,10 +4,14 @@ import {
   CheckCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CircleMinusIcon,
+  FileIcon,
   IndianRupeeIcon,
+  PaperclipIcon,
   TrashIcon,
   XCircleIcon,
 } from "lucide-react";
+import { CLAIM_ITEM_CATEGORIES, I18NNAMESPACE } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -39,22 +43,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn, formatCurrency, toast } from "@/lib/utils";
-import { formatDate, set } from "date-fns";
+import { useFieldArray, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Autocomplete from "../ui/autocomplete";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Claim } from "@/types/claim";
+import { Coverage } from "@/types/coverage";
 import { Description } from "@radix-ui/react-dialog";
 import { Encounter } from "@/types/encounter";
 import { EncounterTabProps } from ".";
-import { I18NNAMESPACE } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "../ui/scroll-area";
 import { apis } from "@/apis";
-import { useForm } from "react-hook-form";
+import { formatDate } from "date-fns";
+import useFileUpload from "@/hooks/use-file-upload";
 import { useMessageListener } from "@/hooks/use-message-listener";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -102,8 +107,6 @@ type CreateClaimCardProps = {
 };
 
 const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
-  const { t } = useTranslation(I18NNAMESPACE);
-
   const [coverage, setCoverage] = useState<string>();
 
   const { data: coverages } = useQuery({
@@ -130,12 +133,12 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
   });
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
         <h2 className="mb-2">Check Coverage Eligibility</h2>
         <ManageCoverages patientId={encounter.patient.id} />
       </div>
-      <div className="mt-8 flex sm:flex-row flex-col gap-4 justify-between items-center">
+      <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
         <Autocomplete
           options={
             coverages?.results.map((coverage) => ({
@@ -154,6 +157,10 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
         >
           Check Eligibility
         </Button>
+      </div>
+
+      <div>
+        <ClaimForm encounter={encounter} coverage={selectedCoverage} />
       </div>
     </div>
   );
@@ -351,7 +358,7 @@ type ManageCoveragesProps = {
   patientId: string;
 };
 
-const coverageformSchema = z.object({
+const coverageFormSchema = z.object({
   identifier: z.string().min(2, {
     message: "Coverage Id must be at least 2 characters.",
   }),
@@ -370,8 +377,8 @@ const coverageformSchema = z.object({
 const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof coverageformSchema>>({
-    resolver: zodResolver(coverageformSchema),
+  const form = useForm<z.infer<typeof coverageFormSchema>>({
+    resolver: zodResolver(coverageFormSchema),
     defaultValues: {
       identifier: "",
       subscriber_id: "",
@@ -402,7 +409,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof coverageformSchema>) {
+  function onSubmit(values: z.infer<typeof coverageFormSchema>) {
     createCoverage({
       beneficiary: patientId,
       identifier: values.identifier,
@@ -499,6 +506,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                             onSearch={(text) =>
                               form.setValue("payor_search_text", text)
                             }
+                            placeholder="Select a coverage"
                           />
                         </FormControl>
                         <FormMessage />
@@ -568,6 +576,374 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  );
+};
+
+type ClaimFormProps = {
+  encounter: Encounter;
+  coverage?: Coverage;
+};
+
+const claimFormSchema = z.object({
+  items: z.array(
+    z.object({
+      category: z.object({
+        code: z.string().min(2, {
+          message: "Category code must be at least 2 characters.",
+        }),
+        display: z.string().min(2, {
+          message: "Category display must be at least 2 characters.",
+        }),
+        system: z.string().min(2, {
+          message: "Category system must be at least 2 characters.",
+        }),
+      }),
+      product_or_service: z.object({
+        code: z.string().min(2, {
+          message: "Product or service code must be at least 2 characters.",
+        }),
+        display: z.string().min(2, {
+          message: "Product or service display must be at least 2 characters.",
+        }),
+        system: z.string().min(2, {
+          message: "Product or service system must be at least 2 characters.",
+        }),
+      }),
+      unit_price: z.number(),
+      quantity: z.number().int(),
+    })
+  ),
+  attachments: z.array(z.string()),
+});
+
+const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
+  const queryClient = useQueryClient();
+
+  const form = useForm<z.infer<typeof claimFormSchema>>({
+    resolver: zodResolver(claimFormSchema),
+    defaultValues: {
+      items: [],
+      attachments: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    name: "items",
+    control: form.control,
+  });
+
+  const {
+    Input: FileInput,
+    files,
+    error,
+    removeFile,
+    clearFiles,
+    handleFileUpload,
+    validateFiles,
+  } = useFileUpload({
+    multiple: true,
+    category: "unspecified",
+    type: "encounter",
+    allowedExtensions: [
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+      ".ppt",
+      ".pptx",
+      ".txt",
+      ".csv",
+    ],
+    onUpload: (file) => {
+      form.setValue("attachments", [
+        ...(form.getValues("attachments") ?? []),
+        file.id!,
+      ]);
+    },
+  });
+
+  const { mutate: submitClaim } = useMutation({
+    mutationFn: apis.claim.submit,
+    onSuccess: () => {
+      toast.success("Claim submitted successfully");
+    },
+  });
+
+  const { mutate: createClaim } = useMutation({
+    mutationFn: apis.claim.create,
+    onSuccess: (data) => {
+      form.reset();
+      clearFiles();
+      queryClient.invalidateQueries({
+        queryKey: ["claims", encounter.id],
+      });
+      toast.success("Claim created successfully");
+      submitClaim(data.id);
+    },
+  });
+
+  async function onSubmit(_values: z.infer<typeof claimFormSchema>) {
+    if (!validateFiles()) {
+      return;
+    }
+
+    await handleFileUpload(encounter.id);
+
+    if (!coverage) {
+      toast.error("Coverage is required to create a claim");
+      return;
+    }
+
+    const { items, attachments } = form.getValues();
+    createClaim({
+      type: "institutional",
+      use: "claim",
+      status: "active",
+      priority: "normal",
+      encounter: encounter.id,
+      insurance: [
+        {
+          sequence: 1,
+          focal: true,
+          coverage: coverage.id,
+        },
+      ],
+      item: items.map((item, i) => ({
+        sequence: i + 1,
+        category: item.category,
+        product_or_service: item.product_or_service,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      })),
+      supporting_info: attachments.map((attachment, i) => ({
+        sequence: i + 1,
+        attachment,
+      })),
+    });
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-4">
+          {fields.map((field, index) => (
+            <Card>
+              <CardHeader>
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`items.${index}.category`}
+                  render={({ field }) => (
+                    <div className="flex justify-between items-center gap-2">
+                      <FormItem className="space-y-1.5 w-full">
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Autocomplete
+                            options={CLAIM_ITEM_CATEGORIES.map((category) => ({
+                              label: category.display,
+                              value: `${category.code}::::${category.display}::::${category.system}`,
+                            }))}
+                            value={`${field.value.code}::::${field.value.display}::::${field.value.system}`}
+                            onChange={(value) => {
+                              const [code, display, system] =
+                                value.split("::::");
+                              form.setValue(`items.${index}.category`, {
+                                code,
+                                display,
+                                system,
+                              });
+                            }}
+                            placeholder="Select a category"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          remove(index);
+                        }}
+                        className="mt-4"
+                      >
+                        <CircleMinusIcon className="h-6 w-6 text-danger-500" />
+                      </Button>
+                    </div>
+                  )}
+                />
+              </CardHeader>
+              <CardContent className="grid sm:grid-cols-2 gap-4">
+                <CardTitle className="sm:col-span-2">
+                  Product or Service
+                </CardTitle>
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`items.${index}.product_or_service.code`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>Code</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`items.${index}.product_or_service.display`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`items.${index}.unit_price`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>Price / Unit</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onChange={(e) =>
+                            form.setValue(
+                              `items.${index}.unit_price`,
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={`items.${index}.quantity`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onChange={(e) =>
+                            form.setValue(
+                              `items.${index}.quantity`,
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          ))}
+
+          <Autocomplete
+            options={CLAIM_ITEM_CATEGORIES.map((category) => ({
+              label: category.display,
+              value: `${category.code}::::${category.display}::::${category.system}`,
+            }))}
+            value=""
+            onChange={(value) => {
+              const [code, display, system] = value.split("::::");
+              append({
+                category: {
+                  code,
+                  display,
+                  system,
+                },
+                product_or_service: {
+                  code: "",
+                  display: "",
+                  system: "https://pmjay.gov.in/hbp-package-code",
+                },
+                unit_price: 0,
+                quantity: 1,
+              });
+            }}
+            placeholder="Select a category"
+          />
+        </div>
+
+        <div className="flex w-full items-center gap-3 flex-col">
+          <div className="relative w-full flex-1">
+            <div className="bottom-full flex max-w-full items-center gap-2 overflow-x-auto rounded-md bg-white p-2">
+              {files.map((file, i) => (
+                <div
+                  key={file.name}
+                  className="flex min-w-36 max-w-36 items-center gap-2"
+                >
+                  <div>
+                    {file.type.includes("image") ? (
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-300">
+                        <FileIcon className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="w-24 truncate text-sm">{file.name}</p>
+                    <div className="flex !items-center gap-2.5">
+                      <p className="text-xs text-gray-500">
+                        {(file.size / 1024).toFixed(2)} KB
+                      </p>
+                      <button
+                        onClick={() => {
+                          removeFile(i);
+                        }}
+                      >
+                        <TrashIcon className="h-4 w-4 text-danger-500" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex items-center justify-center w-full"
+          >
+            <Label className="button-size-default button-shape-square button-primary-default inline-flex h-min w-full cursor-pointer items-center justify-center gap-2 whitespace-pre font-medium outline-offset-1 transition-all duration-200 ease-in-out">
+              <PaperclipIcon className="h-5 w-5" />
+              <span>Add Attachments</span>
+              <FileInput />
+            </Label>
+          </Button>
+        </div>
+        {error && (
+          <p className="pt-1.5 text-xs font-medium text-danger-600">{error}</p>
+        )}
+        <Button type="submit" className="w-full">
+          Create and Submit Claim
+        </Button>
+      </form>
+    </Form>
   );
 };
 

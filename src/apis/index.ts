@@ -1,4 +1,9 @@
 import { Coverage, CoverageEligibilityRequest } from "@/types/coverage";
+import {
+  CreateFileRequest,
+  CreateFileResponse,
+  FileUploadModel,
+} from "@/types/file_uploaad";
 import { queryString, request } from "./request";
 
 import { Claim } from "@/types/claim";
@@ -72,6 +77,75 @@ export const apis = {
 
     get: async (id: string) => {
       return await request<Claim>(`/api/hcx/claim/${id}/`);
+    },
+
+    create: async (body: {
+      type: string;
+      status: string;
+      use: string;
+      priority: string;
+      encounter: string;
+      insurance: [
+        {
+          sequence: 1;
+          focal: true;
+          coverage: string;
+        }
+      ];
+      item: {
+        sequence: number;
+        category: {
+          code: string;
+          system: string;
+          display: string;
+        };
+        product_or_service: {
+          system: string;
+          code: string;
+          display: string;
+        };
+        quantity: number;
+        unit_price: number;
+      }[];
+      supporting_info: {
+        sequence: number;
+        category?: {
+          code: string;
+          system: string;
+          display: string;
+        };
+        value?: string;
+        attachment?: string;
+      }[];
+    }) => {
+      return await request<Claim>("/api/hcx/claim/", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+
+    submit: async (id: string) => {
+      return await request<Claim>(`/api/hcx/claim/${id}/submit/`, {
+        method: "POST",
+      });
+    },
+  },
+
+  file: {
+    createUpload: async (body: CreateFileRequest) => {
+      return await request<CreateFileResponse>("/api/v1/files/", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+
+    markUploadCompleted: async (id: string) => {
+      return await request<FileUploadModel>(
+        `/api/v1/files/${id}/mark_upload_completed/`,
+        {
+          method: "POST",
+        }
+      );
     },
   },
 };
