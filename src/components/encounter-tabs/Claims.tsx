@@ -5,6 +5,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   IndianRupeeIcon,
+  TrashIcon,
   XCircleIcon,
 } from "lucide-react";
 import {
@@ -20,24 +21,46 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FC, useMemo, useState } from "react";
-import { cn, formatCurrency } from "@/lib/utils";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { cn, formatCurrency, toast } from "@/lib/utils";
+import { formatDate, set } from "date-fns";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import Autocomplete from "../ui/autocomplete";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Claim } from "@/types/claim";
+import { Description } from "@radix-ui/react-dialog";
 import { Encounter } from "@/types/encounter";
 import { EncounterTabProps } from ".";
 import { I18NNAMESPACE } from "@/lib/constants";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "../ui/scroll-area";
 import { apis } from "@/apis";
-import { formatDate } from "date-fns";
+import { useForm } from "react-hook-form";
 import { useMessageListener } from "@/hooks/use-message-listener";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export const ClaimsEncounterTab: FC<EncounterTabProps> = ({ encounter }) => {
-  //   const { t } = useTranslation(I18NNAMESPACE);
-
   const { data: claims, refetch: refetchClaims } = useQuery({
     queryKey: ["claims", encounter.id],
     queryFn: () =>
@@ -79,7 +102,61 @@ type CreateClaimCardProps = {
 };
 
 const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
-  return <div>{encounter.id}</div>;
+  const { t } = useTranslation(I18NNAMESPACE);
+
+  const [coverage, setCoverage] = useState<string>();
+
+  const { data: coverages } = useQuery({
+    queryKey: ["coverages", encounter.patient.id],
+    queryFn: () => apis.coverage.list({ beneficiary: encounter.patient.id }),
+    enabled: !!encounter.patient.id,
+  }); // TODO: implement searching
+
+  const selectedCoverage = useMemo(() => {
+    return coverages?.results.find((_coverage) => _coverage.id === coverage);
+  }, [coverage]);
+
+  const { mutate: checkCoverageEligibility } = useMutation({
+    mutationFn: () =>
+      apis.coverage.checkEligibility(selectedCoverage?.id as string, {
+        facility: encounter.facility.id,
+        priority: "normal",
+        purpose: "validation",
+      }),
+    onSuccess: () => {
+      setCoverage(undefined);
+      toast.success("Coverage eligibility check initiated successfully");
+    },
+  });
+
+  return (
+    <div>
+      <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
+        <h2 className="mb-2">Check Coverage Eligibility</h2>
+        <ManageCoverages patientId={encounter.patient.id} />
+      </div>
+      <div className="mt-8 flex sm:flex-row flex-col gap-4 justify-between items-center">
+        <Autocomplete
+          options={
+            coverages?.results.map((coverage) => ({
+              label: `${coverage.subscriber_id} - ${coverage.identifier}`,
+              value: coverage.id,
+            })) ?? []
+          }
+          value={coverage}
+          onChange={setCoverage}
+        />
+        <Button
+          type="button"
+          onClick={() => {
+            checkCoverageEligibility();
+          }}
+        >
+          Check Eligibility
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 type ClaimCardProps = {
@@ -267,6 +344,230 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
         </CardFooter>
       </Collapsible>
     </Card>
+  );
+};
+
+type ManageCoveragesProps = {
+  patientId: string;
+};
+
+const coverageformSchema = z.object({
+  identifier: z.string().min(2, {
+    message: "Coverage Id must be at least 2 characters.",
+  }),
+  subscriber_id: z.string().min(2, {
+    message: "Subscriber Id must be at least 2 characters.",
+  }),
+  payor_identifier: z.string().min(2, {
+    message: "Payor Id must be at least 2 characters.",
+  }),
+  payor_name: z.string().min(2, {
+    message: "Payor Name must be at least 2 characters.",
+  }),
+  payor_search_text: z.string().optional(),
+});
+
+const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
+  const queryClient = useQueryClient();
+
+  const form = useForm<z.infer<typeof coverageformSchema>>({
+    resolver: zodResolver(coverageformSchema),
+    defaultValues: {
+      identifier: "",
+      subscriber_id: "",
+      payor_identifier: "",
+      payor_name: "",
+      payor_search_text: "",
+    },
+  });
+
+  const { mutate: createCoverage } = useMutation({
+    mutationFn: apis.coverage.create,
+    onSuccess: () => {
+      form.reset();
+      queryClient.invalidateQueries({
+        queryKey: ["coverages", patientId],
+      });
+      toast.success("Coverage added successfully");
+    },
+  });
+
+  const { mutate: deleteCoverage } = useMutation({
+    mutationFn: apis.coverage.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["coverages", patientId],
+      });
+      toast.success("Coverage deleted successfully");
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof coverageformSchema>) {
+    createCoverage({
+      beneficiary: patientId,
+      identifier: values.identifier,
+      subscriber_id: values.subscriber_id,
+      payor: {
+        identifier: values.payor_identifier,
+        name: values.payor_name,
+      },
+      status: "active",
+      kind: "insurance",
+    });
+  }
+
+  const { data: coverages } = useQuery({
+    queryKey: ["coverages", patientId],
+    queryFn: () => apis.coverage.list({ beneficiary: patientId }),
+    enabled: !!patientId,
+  });
+
+  const { data: payors } = useQuery({
+    queryKey: ["payors", form.watch("payor_search_text")],
+    queryFn: () => apis.coverage.payors(form.watch("payor_search_text") ?? ""),
+  });
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Manage Coverages</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Manage Coverages</DialogTitle>
+          <DialogDescription>
+            Add or remove coverages for the patient
+          </DialogDescription>
+        </DialogHeader>
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Coverage</CardTitle>
+          </CardHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CardContent>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="identifier"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>Coverage Id</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Coverage Id" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subscriber_id"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>Subscriber Id</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Subscriber Id" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="payor_identifier"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5 sm:col-span-2">
+                        <FormLabel>Payor</FormLabel>
+                        <FormControl>
+                          <Autocomplete
+                            {...field}
+                            options={
+                              payors?.map((payor) => ({
+                                label: `${payor.name} - ${payor.code}`,
+                                value: `${payor.name}::::${payor.code}`,
+                              })) ?? []
+                            }
+                            onChange={(selected) => {
+                              const [name, code] = selected.split("::::");
+                              form.setValue("payor_name", name);
+                              form.setValue("payor_identifier", code);
+                            }}
+                            value={`${form.watch("payor_name")}::::${form.watch(
+                              "payor_identifier"
+                            )}`}
+                            onSearch={(text) =>
+                              form.setValue("payor_search_text", text)
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" className="w-full">
+                  Add Coverage
+                </Button>
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+        <ScrollArea className="w-full max-h-96 pr-3">
+          <div className="space-y-4">
+            {coverages?.results.map((coverage, i) => (
+              <Card key={coverage.id} className="w-full">
+                <CardHeader className="flex flex-row justify-between items-center">
+                  <div className="space-y-1">
+                    <CardTitle>Coverage {i}</CardTitle>
+                    <Description className="text-sm text-gray-500">
+                      Added on{" "}
+                      {formatDate(coverage.created_date, "dd MMM yyyy")}
+                    </Description>
+                  </div>
+                  <div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        deleteCoverage(coverage.id);
+                      }}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <TrashIcon className="text-red-600" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Coverage Id</Label>
+                    <p className="text-sm font-medium">{coverage.identifier}</p>
+                  </div>
+                  <div>
+                    <Label>Subscriber Id</Label>
+                    <p className="text-sm font-medium">
+                      {coverage.subscriber_id}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Payor Id</Label>
+                    <p className="text-sm font-medium">
+                      {coverage.payor.identifier}
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Payor Name</Label>
+                    <p className="text-sm font-medium">{coverage.payor.name}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -12,7 +12,17 @@ export const apis = {
       );
     },
 
-    create: async (body: Coverage) => {
+    create: async (body: {
+      beneficiary: string;
+      identifier: string;
+      subscriber_id: string;
+      payor: {
+        identifier: string;
+        name: string;
+      };
+      status: string;
+      kind: string;
+    }) => {
       return await request<Coverage>("/api/hcx/coverage/", {
         method: "POST",
         body: JSON.stringify(body),
@@ -23,13 +33,26 @@ export const apis = {
       return await request<Coverage>(`/api/hcx/coverage/${id}/`);
     },
 
-    checkEligibility: async (id: string, body: CoverageEligibilityRequest) => {
+    checkEligibility: async (
+      id: string,
+      body: {
+        facility: string;
+        priority: string;
+        purpose: string;
+      }
+    ) => {
       return await request<CoverageEligibilityRequest>(
         `/api/hcx/coverage/${id}/check_eligibility/`,
         {
           method: "POST",
           body: JSON.stringify(body),
         }
+      );
+    },
+
+    payors: async (query: string) => {
+      return await request<{ name: string; code: string }[]>(
+        `/api/hcx/coverage/payors/` + queryString({ query })
       );
     },
 

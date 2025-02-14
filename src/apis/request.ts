@@ -37,6 +37,10 @@ export async function request<Response>(
 
   const response = await fetch(url, requestInit);
 
+  if (response.status === 204) {
+    return {} as Response;
+  }
+
   // TODO: parse response based on content type
   const data = await response.json();
 
