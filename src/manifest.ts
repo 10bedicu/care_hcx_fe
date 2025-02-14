@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import routes from "./routes";
 
 const manifest = {
@@ -6,7 +7,9 @@ const manifest = {
   extends: [],
   components: {},
   navItems: [],
-  encounterTabs: {},
+  encounterTabs: {
+    claims: lazy(() => import("./components/encounter-tabs/Claims")),
+  },
 };
 
 export default manifest;

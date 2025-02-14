@@ -20,3 +20,15 @@ export const toast = {
   success: (message: string, options = {}) =>
     _toast.success(message, { ...defaultToastOptions, ...options }),
 };
+
+
+export const formatCurrency = (value?: number) => {
+  if (value === undefined) {
+    return "NA";
+  }
+
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(value);
+};

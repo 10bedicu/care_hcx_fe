@@ -1,6 +1,7 @@
 import { Coverage, CoverageEligibilityRequest } from "@/types/coverage";
 import { queryString, request } from "./request";
 
+import { Claim } from "@/types/claim";
 import { PaginatedResponse } from "./types";
 
 export const apis = {
@@ -39,5 +40,15 @@ export const apis = {
     },
   },
 
-  claim: {},
+  claim: {
+    list: async (query?: { encounter?: string }) => {
+      return await request<PaginatedResponse<Claim>>(
+        "/api/hcx/claim/" + queryString(query)
+      );
+    },
+
+    get: async (id: string) => {
+      return await request<Claim>(`/api/hcx/claim/${id}/`);
+    },
+  },
 };
