@@ -56,7 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn, formatCurrency, toast } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, toast } from "@/lib/utils";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -70,7 +70,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "../ui/scroll-area";
 import { apis } from "@/apis";
-import { formatDate } from "date-fns";
 import useFileUpload from "@/hooks/use-file-upload";
 import { useMessageListener } from "@/hooks/use-message-listener";
 import { useTranslation } from "react-i18next";
@@ -141,7 +140,10 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
     [selectedCoverage]
   );
 
-  const { mutate: checkCoverageEligibility } = useMutation({
+  const {
+    mutate: checkCoverageEligibility,
+    isPending: checkCoverageEligibilityIsPending,
+  } = useMutation({
     mutationFn: () =>
       apis.coverage.checkEligibility(selectedCoverage?.id!, {
         facility: encounter.facility.id,
@@ -212,6 +214,7 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
         <Button
           type="button"
           disabled={!(selectedCoverage && status === "pending")}
+          loading={checkCoverageEligibilityIsPending}
           onClick={() => {
             checkCoverageEligibility();
           }}
@@ -379,9 +382,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
           <div className="flex space-x-4 text-sm text-gray-500">
             <div className="flex items-center gap-1.5">
               <CalendarIcon className="w-4 h-4" />
-              <span>
-                Created On: {formatDate(_claim.created_date!, "dd MMM yyyy")}
-              </span>
+              <span>Created On: {formatDate(_claim.created_date!)}</span>
             </div>
             {status !== "pending" && (
               <div className="flex items-center gap-1.5">
@@ -393,10 +394,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
                 )}
                 <span className="capitalize">
                   {status} On:{" "}
-                  {formatDate(
-                    _claim.latest_claim_response?.created_date!,
-                    "dd MMM yyyy"
-                  )}
+                  {formatDate(_claim.latest_claim_response?.created_date!)}
                 </span>
               </div>
             )}
@@ -451,26 +449,28 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
     },
   });
 
-  const { mutate: createCoverage } = useMutation({
-    mutationFn: apis.coverage.create,
-    onSuccess: () => {
-      form.reset();
-      queryClient.invalidateQueries({
-        queryKey: ["coverages", patientId],
-      });
-      toast.success("Coverage added successfully");
-    },
-  });
+  const { mutate: createCoverage, isPending: createCoverageIsPending } =
+    useMutation({
+      mutationFn: apis.coverage.create,
+      onSuccess: () => {
+        form.reset();
+        queryClient.invalidateQueries({
+          queryKey: ["coverages", patientId],
+        });
+        toast.success("Coverage added successfully");
+      },
+    });
 
-  const { mutate: deleteCoverage } = useMutation({
-    mutationFn: apis.coverage.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["coverages", patientId],
-      });
-      toast.success("Coverage deleted successfully");
-    },
-  });
+  const { mutate: deleteCoverage, isPending: deleteCoverageIsPending } =
+    useMutation({
+      mutationFn: apis.coverage.delete,
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["coverages", patientId],
+        });
+        toast.success("Coverage deleted successfully");
+      },
+    });
 
   function onSubmit(values: z.infer<typeof coverageFormSchema>) {
     createCoverage({
@@ -580,7 +580,11 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full">
+                <Button
+                  loading={createCoverageIsPending}
+                  type="submit"
+                  className="w-full"
+                >
                   Add Coverage
                 </Button>
               </CardFooter>
@@ -597,8 +601,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     <div className="space-y-1">
                       <CardTitle>Coverage {i}</CardTitle>
                       <Description className="text-sm text-gray-500">
-                        Added on{" "}
-                        {formatDate(coverage.created_date, "dd MMM yyyy")}
+                        Added on {formatDate(coverage.created_date)}
                       </Description>
                       <Description>
                         <Badge
@@ -615,8 +618,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                             on{" "}
                             {formatDate(
                               coverage.latest_coverage_eligibility_response
-                                ?.created_date!,
-                              "dd MMM yyyy"
+                                ?.created_date!
                             )}
                           </span>
                         </Badge>
@@ -628,6 +630,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                         onClick={() => {
                           deleteCoverage(coverage.id);
                         }}
+                        disabled={deleteCoverageIsPending}
                         variant="ghost"
                         size="icon"
                       >
@@ -776,7 +779,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
     },
   });
 
-  const { mutate: createClaim } = useMutation({
+  const { mutate: createClaim, isPending: createClaimIsPending } = useMutation({
     mutationFn: apis.claim.create,
     onSuccess: (data) => {
       form.reset();
@@ -1125,7 +1128,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
           />
         </div>
 
-        <Button type="submit" className="w-full">
+        <Button loading={createClaimIsPending} type="submit" className="w-full">
           Create and Submit Claim
         </Button>
       </form>

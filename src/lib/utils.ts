@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast as _toast, ToasterProps } from "sonner";
+import { formatDate as _formatDate } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,7 +22,6 @@ export const toast = {
     _toast.success(message, { ...defaultToastOptions, ...options }),
 };
 
-
 export const formatCurrency = (value?: number) => {
   if (value === undefined) {
     return "NA";
@@ -31,4 +31,12 @@ export const formatCurrency = (value?: number) => {
     style: "currency",
     currency: "INR",
   }).format(value);
+};
+
+export const formatDate = (date?: string) => {
+  if (!date) {
+    return "NA";
+  }
+
+  return _formatDate(date, "dd MMM yyyy");
 };
