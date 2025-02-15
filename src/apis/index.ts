@@ -11,7 +11,14 @@ import { PaginatedResponse } from "./types";
 
 export const apis = {
   coverage: {
-    list: async (query?: { beneficiary?: string }) => {
+    list: async (query?: {
+      beneficiary?: string;
+      ordering?:
+        | "created_date"
+        | "-created_date"
+        | "modified_date"
+        | "-modified_date";
+    }) => {
       return await request<PaginatedResponse<Coverage>>(
         "/api/hcx/coverage/" + queryString(query)
       );
@@ -69,7 +76,14 @@ export const apis = {
   },
 
   claim: {
-    list: async (query?: { encounter?: string }) => {
+    list: async (query?: {
+      encounter?: string;
+      ordering?:
+        | "created_date"
+        | "-created_date"
+        | "modified_date"
+        | "-modified_date";
+    }) => {
       return await request<PaginatedResponse<Claim>>(
         "/api/hcx/claim/" + queryString(query)
       );

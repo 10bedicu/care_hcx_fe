@@ -71,6 +71,7 @@ export const ClaimsEncounterTab: FC<EncounterTabProps> = ({ encounter }) => {
     queryFn: () =>
       apis.claim.list({
         encounter: encounter.id,
+        ordering: "-created_date",
       }),
     enabled: !!encounter.id,
   });
@@ -111,7 +112,11 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
 
   const { data: coverages } = useQuery({
     queryKey: ["coverages", encounter.patient.id],
-    queryFn: () => apis.coverage.list({ beneficiary: encounter.patient.id }),
+    queryFn: () =>
+      apis.coverage.list({
+        beneficiary: encounter.patient.id,
+        ordering: "-created_date",
+      }),
     enabled: !!encounter.patient.id,
   }); // TODO: implement searching
 
@@ -425,7 +430,8 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
 
   const { data: coverages } = useQuery({
     queryKey: ["coverages", patientId],
-    queryFn: () => apis.coverage.list({ beneficiary: patientId }),
+    queryFn: () =>
+      apis.coverage.list({ beneficiary: patientId, ordering: "-created_date" }),
     enabled: !!patientId,
   });
 
