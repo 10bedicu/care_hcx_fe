@@ -665,34 +665,37 @@ type ClaimFormProps = {
 };
 
 const claimFormSchema = z.object({
-  items: z.array(
-    z.object({
-      category: z.object({
-        code: z.string().min(2, {
-          message: "Category code must be at least 2 characters.",
+  items: z
+    .array(
+      z.object({
+        category: z.object({
+          code: z.string().min(2, {
+            message: "Category code must be at least 2 characters.",
+          }),
+          display: z.string().min(2, {
+            message: "Category display must be at least 2 characters.",
+          }),
+          system: z.string().min(2, {
+            message: "Category system must be at least 2 characters.",
+          }),
         }),
-        display: z.string().min(2, {
-          message: "Category display must be at least 2 characters.",
+        product_or_service: z.object({
+          code: z.string().min(2, {
+            message: "Product or service code must be at least 2 characters.",
+          }),
+          display: z.string().min(2, {
+            message:
+              "Product or service display must be at least 2 characters.",
+          }),
+          system: z.string().min(2, {
+            message: "Product or service system must be at least 2 characters.",
+          }),
         }),
-        system: z.string().min(2, {
-          message: "Category system must be at least 2 characters.",
-        }),
-      }),
-      product_or_service: z.object({
-        code: z.string().min(2, {
-          message: "Product or service code must be at least 2 characters.",
-        }),
-        display: z.string().min(2, {
-          message: "Product or service display must be at least 2 characters.",
-        }),
-        system: z.string().min(2, {
-          message: "Product or service system must be at least 2 characters.",
-        }),
-      }),
-      unit_price: z.number(),
-      quantity: z.number().int(),
-    })
-  ),
+        unit_price: z.number(),
+        quantity: z.number().int(),
+      })
+    )
+    .min(1, { message: "At least one item is required." }),
   attachments: z.array(z.string()),
 });
 
@@ -771,7 +774,9 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
       return;
     }
 
-    await handleFileUpload(encounter.id);
+    if (files.length) {
+      await handleFileUpload(encounter.id);
+    }
 
     if (!coverage) {
       toast.error("Coverage is required to create a claim");
@@ -937,30 +942,42 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             </Card>
           ))}
 
-          <Autocomplete
-            options={CLAIM_ITEM_CATEGORIES.map((category) => ({
-              label: category.display,
-              value: `${category.code}::::${category.display}::::${category.system}`,
-            }))}
-            value=""
-            onChange={(value) => {
-              const [code, display, system] = value.split("::::");
-              append({
-                category: {
-                  code,
-                  display,
-                  system,
-                },
-                product_or_service: {
-                  code: "",
-                  display: "",
-                  system: "https://pmjay.gov.in/hbp-package-code",
-                },
-                unit_price: 0,
-                quantity: 1,
-              });
-            }}
-            placeholder="Select a category"
+          <FormField
+            control={form.control}
+            name="items"
+            render={() => (
+              <FormItem>
+                <FormLabel />
+                <FormControl>
+                  <Autocomplete
+                    options={CLAIM_ITEM_CATEGORIES.map((category) => ({
+                      label: category.display,
+                      value: `${category.code}::::${category.display}::::${category.system}`,
+                    }))}
+                    value=""
+                    onChange={(value) => {
+                      const [code, display, system] = value.split("::::");
+                      append({
+                        category: {
+                          code,
+                          display,
+                          system,
+                        },
+                        product_or_service: {
+                          code: "",
+                          display: "",
+                          system: "https://pmjay.gov.in/hbp-package-code",
+                        },
+                        unit_price: 0,
+                        quantity: 1,
+                      });
+                    }}
+                    placeholder="Select a category"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
@@ -1004,21 +1021,25 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
               ))}
             </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            className="flex items-center justify-center w-full"
-          >
-            <Label className="button-size-default button-shape-square button-primary-default inline-flex h-min w-full cursor-pointer items-center justify-center gap-2 whitespace-pre font-medium outline-offset-1 transition-all duration-200 ease-in-out">
-              <PaperclipIcon className="h-5 w-5" />
-              <span>Add Attachments</span>
-              <FileInput />
-            </Label>
-          </Button>
+          <div className="w-full">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex items-center justify-center w-full"
+            >
+              <Label className="button-size-default button-shape-square button-primary-default inline-flex h-min w-full cursor-pointer items-center justify-center gap-2 whitespace-pre font-medium outline-offset-1 transition-all duration-200 ease-in-out">
+                <PaperclipIcon className="h-5 w-5" />
+                <span>Add Attachments</span>
+                <FileInput />
+              </Label>
+            </Button>
+            {error && (
+              <p className="pt-1.5 text-xs font-medium text-danger-600">
+                {error}
+              </p>
+            )}
+          </div>
         </div>
-        {error && (
-          <p className="pt-1.5 text-xs font-medium text-danger-600">{error}</p>
-        )}
         <Button type="submit" className="w-full">
           Create and Submit Claim
         </Button>

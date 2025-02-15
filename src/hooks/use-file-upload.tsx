@@ -18,9 +18,9 @@ import { DEFAULT_ALLOWED_EXTENSIONS } from "@/lib/constants";
 import { apis } from "@/apis";
 import imageCompression from "browser-image-compression";
 import jsPDF from "jspdf";
-import { t } from "i18next";
 import { toast } from "sonner";
 import uploadFile from "@/apis/upload-file";
+import { useTranslation } from "react-i18next";
 
 export type FileUploadOptions = {
   multiple?: boolean;
@@ -89,6 +89,8 @@ export default function useFileUpload(
     multiple,
     allowNameFallback = true,
   } = options;
+
+  const { t } = useTranslation();
 
   const [uploadFileNames, setUploadFileNames] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
