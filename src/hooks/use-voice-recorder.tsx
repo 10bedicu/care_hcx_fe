@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { toast } from "sonner";
+import { toast } from "@/lib/utils";
 
 const useVoiceRecorder = (handleMicPermission: (allowed: boolean) => void) => {
   const [audioURL, setAudioURL] = useState("");

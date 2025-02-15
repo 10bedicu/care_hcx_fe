@@ -20,6 +20,8 @@ export const toast = {
     _toast.warning(message, { ...defaultToastOptions, ...options }),
   success: (message: string, options = {}) =>
     _toast.success(message, { ...defaultToastOptions, ...options }),
+  info: (message: string, options = {}) =>
+    _toast.info(message, { ...defaultToastOptions, ...options }),
 };
 
 export const formatCurrency = (value?: number) => {

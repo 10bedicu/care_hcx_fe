@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction } from "react";
 
 import { t } from "i18next";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils";
 
 export function handleUploadPercentage(
   event: ProgressEvent,

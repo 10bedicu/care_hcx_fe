@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Webcam from "react-webcam";
 import { t } from "i18next";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils";
 import useBreakpoints from "@/hooks/use-breakpoints";
 
 export interface CameraCaptureDialogProps {

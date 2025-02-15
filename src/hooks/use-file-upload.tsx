@@ -18,7 +18,7 @@ import { DEFAULT_ALLOWED_EXTENSIONS } from "@/lib/constants";
 import { apis } from "@/apis";
 import imageCompression from "browser-image-compression";
 import jsPDF from "jspdf";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils";
 import uploadFile from "@/apis/upload-file";
 import { useTranslation } from "react-i18next";
 

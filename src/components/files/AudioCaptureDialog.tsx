@@ -2,7 +2,7 @@ import { CheckIcon, HistoryIcon, MicIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Link } from "raviger";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils";
 import { useTimer } from "@/hooks/use-timer";
 import { useTranslation } from "react-i18next";
 import useVoiceRecorder from "@/hooks/use-voice-recorder";
