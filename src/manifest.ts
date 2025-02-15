@@ -5,7 +5,11 @@ const manifest = {
   plugin: "care_hcx",
   routes,
   extends: [],
-  components: {},
+  components: {
+    PatientInfoCardMarkAsComplete: lazy(
+      () => import("./components/pluggables/PatientInfoCardMarkAsComplete")
+    ),
+  },
   navItems: [],
   encounterTabs: {
     claims: lazy(() => import("./components/encounter-tabs/Claims")),
