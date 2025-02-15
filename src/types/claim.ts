@@ -29,17 +29,17 @@ export const CLAIM_STATUSES = [
 ] as const;
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
 
-export const CLAIM_PRIORITY_CODES = ["stat", "normal", "deferred"] as const;
-export type ClaimPriorityCode = (typeof CLAIM_PRIORITY_CODES)[number];
+export const CLAIM_PRIORITIES = ["stat", "normal", "deferred"] as const;
+export type ClaimPriorityCode = (typeof CLAIM_PRIORITIES)[number];
 
-export const CLAIM_RELATED_RELATIONSHIP_CHOICES = [
+export const CLAIM_RELATED_RELATIONSHIPS = [
   "enhancement",
   "settlement",
   "prior",
   "associated",
 ] as const;
 export type ClaimRelatedRelationshipChoice =
-  (typeof CLAIM_RELATED_RELATIONSHIP_CHOICES)[number];
+  (typeof CLAIM_RELATED_RELATIONSHIPS)[number];
 
 export type ClaimInsurance = {
   sequence: number;

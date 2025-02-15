@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import { CLAIM_ITEM_CATEGORIES, I18NNAMESPACE } from "@/lib/constants";
 import {
+  CLAIM_PRIORITIES,
+  CLAIM_USES,
+  Claim,
+  getClaimApprovalStatus,
+} from "@/types/claim";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -20,7 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { Claim, getClaimApprovalStatus } from "@/types/claim";
 import {
   Collapsible,
   CollapsibleContent,
@@ -44,6 +49,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn, formatCurrency, toast } from "@/lib/utils";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -691,12 +703,18 @@ const claimFormSchema = z.object({
             message: "Product or service system must be at least 2 characters.",
           }),
         }),
-        unit_price: z.number(),
-        quantity: z.number().int(),
+        unit_price: z.number().min(1, {
+          message: "Price must be greater than 0.",
+        }),
+        quantity: z.number().int().min(1, {
+          message: "Quantity must be greater than or equal to 1.",
+        }),
       })
     )
     .min(1, { message: "At least one item is required." }),
   attachments: z.array(z.string()),
+  use: z.enum(CLAIM_USES),
+  priority: z.enum(CLAIM_PRIORITIES),
 });
 
 const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
@@ -707,6 +725,8 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
     defaultValues: {
       items: [],
       attachments: [],
+      use: "claim",
+      priority: "normal",
     },
   });
 
@@ -783,12 +803,12 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
       return;
     }
 
-    const { items, attachments } = form.getValues();
+    const { items, attachments, use, priority } = form.getValues();
     createClaim({
       type: "institutional",
-      use: "claim",
       status: "active",
-      priority: "normal",
+      use,
+      priority,
       encounter: encounter.id,
       insurance: [
         {
@@ -981,7 +1001,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
           />
         </div>
 
-        <div className="flex w-full items-center gap-3 flex-col">
+        <div className="flex w-full items-center flex-col">
           <div className="relative w-full flex-1">
             <div className="bottom-full flex max-w-full items-center gap-2 overflow-x-auto rounded-md bg-white p-2">
               {files.map((file, i) => (
@@ -1040,6 +1060,71 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             )}
           </div>
         </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="use"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue
+                        className="capitalize"
+                        placeholder="Select a type"
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CLAIM_USES.map((use) => (
+                      <SelectItem className="capitalize" value={use}>
+                        {use}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Priority</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue
+                        className="capitalize"
+                        placeholder="Select a priority"
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CLAIM_PRIORITIES.map((priority) => (
+                      <SelectItem className="capitalize" value={priority}>
+                        {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <Button type="submit" className="w-full">
           Create and Submit Claim
         </Button>
