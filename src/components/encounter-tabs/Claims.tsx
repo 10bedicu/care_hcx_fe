@@ -20,11 +20,13 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
+import { Claim, getClaimApprovalStatus } from "@/types/claim";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
+import { Coverage, getCoverageVerificationStatus } from "@/types/coverage";
 import {
   Dialog,
   DialogContent,
@@ -49,8 +51,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Autocomplete from "../ui/autocomplete";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { Claim } from "@/types/claim";
-import { Coverage } from "@/types/coverage";
 import { Description } from "@radix-ui/react-dialog";
 import { Encounter } from "@/types/encounter";
 import { EncounterTabProps } from ".";
@@ -124,9 +124,14 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
     return coverages?.results.find((_coverage) => _coverage.id === coverage);
   }, [coverage]);
 
+  const status = useMemo(
+    () => getCoverageVerificationStatus(selectedCoverage),
+    [selectedCoverage]
+  );
+
   const { mutate: checkCoverageEligibility } = useMutation({
     mutationFn: () =>
-      apis.coverage.checkEligibility(selectedCoverage?.id as string, {
+      apis.coverage.checkEligibility(selectedCoverage?.id!, {
         facility: encounter.facility.id,
         priority: "normal",
         purpose: "validation",
@@ -146,16 +151,55 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
       <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
         <Autocomplete
           options={
-            coverages?.results.map((coverage) => ({
-              label: `${coverage.subscriber_id} - ${coverage.identifier}`,
-              value: coverage.id,
-            })) ?? []
+            coverages?.results.map((coverage) => {
+              const status = getCoverageVerificationStatus(coverage);
+
+              return {
+                label: `${coverage.subscriber_id} - ${coverage.identifier}`,
+                display: (
+                  <div className="flex justify-between items-center gap-2">
+                    <div className="flex flex-col gap-1">
+                      <div>
+                        <span className="text-gray-500">
+                          {coverage.subscriber_id} -{" "}
+                        </span>
+                        <span className="font-medium">
+                          {coverage.identifier}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">
+                          {coverage.payor.name}
+                        </span>
+                        <span className="text-gray-500">
+                          {" "}
+                          - {coverage.payor.identifier}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <Badge
+                        className={cn("capitalize text-xs", {
+                          "bg-green-200 text-green-600": status === "verified",
+                          "bg-red-200 text-red-600": status === "rejected",
+                          "bg-yellow-200 text-yellow-600": status === "pending",
+                        })}
+                      >
+                        {status}
+                      </Badge>
+                    </div>
+                  </div>
+                ),
+                value: coverage.id,
+              };
+            }) ?? []
           }
           value={coverage}
           onChange={setCoverage}
         />
         <Button
           type="button"
+          disabled={!(selectedCoverage && status === "pending")}
           onClick={() => {
             checkCoverageEligibility();
           }}
@@ -164,9 +208,11 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
         </Button>
       </div>
 
-      <div>
-        <ClaimForm encounter={encounter} coverage={selectedCoverage} />
-      </div>
+      {status === "verified" && (
+        <div>
+          <ClaimForm encounter={encounter} coverage={selectedCoverage} />
+        </div>
+      )}
     </div>
   );
 };
@@ -185,14 +231,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
     enabled: !!_claim.id && isOpen,
   });
 
-  const status = useMemo(() => {
-    if (!_claim.latest_response) return "pending";
-
-    if (_claim.latest_response.outcome === "complete") return "approved";
-    if (_claim.latest_response.outcome === "error") return "rejected";
-
-    return "pending";
-  }, [_claim]);
+  const status = useMemo(() => getClaimApprovalStatus(_claim), [_claim]);
 
   return (
     <Card>
@@ -236,7 +275,10 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
             </div>
             <div className="flex items-center text-2xl font-bold">
               <IndianRupeeIcon className="w-6 h-6 text-gray-500 mr-1" />
-              {(_claim.latest_response?.total ?? _claim.total) as number}
+              {
+                (_claim.latest_claim_response?.total_amount ??
+                  _claim.total) as number
+              }
             </div>
           </div>
         </CardHeader>
@@ -307,9 +349,9 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
                       {t("claim__total_approved_amount")}
                     </th>
                     <td className="pl-3 pr-6 pt-4 text-right text-sm font-semibold text-secondary-900 sm:pr-0">
-                      {claim?.latest_response?.total
+                      {claim?.latest_claim_response?.total_amount
                         ? formatCurrency(
-                            claim?.latest_response?.total as number
+                            claim?.latest_claim_response?.total_amount as number
                           )
                         : "NA"}
                     </td>
@@ -330,7 +372,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
               </span>
             </div>
             {status !== "pending" && (
-              <div className="flex items-center">
+              <div className="flex items-center gap-1.5">
                 {status === "approved" && (
                   <CheckCircleIcon className="w-4 h-4 text-green-500" />
                 )}
@@ -338,7 +380,11 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
                   <XCircleIcon className="w-4 h-4 text-red-500" />
                 )}
                 <span className="capitalize">
-                  {status} On: {_claim.latest_response?.created_at as string}
+                  {status} On:{" "}
+                  {formatDate(
+                    _claim.latest_claim_response?.created_date!,
+                    "dd MMM yyyy"
+                  )}
                 </span>
               </div>
             )}
@@ -531,53 +577,81 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
         </Card>
         <ScrollArea className="w-full max-h-96 pr-3">
           <div className="space-y-4">
-            {coverages?.results.map((coverage, i) => (
-              <Card key={coverage.id} className="w-full">
-                <CardHeader className="flex flex-row justify-between items-center">
-                  <div className="space-y-1">
-                    <CardTitle>Coverage {i}</CardTitle>
-                    <Description className="text-sm text-gray-500">
-                      Added on{" "}
-                      {formatDate(coverage.created_date, "dd MMM yyyy")}
-                    </Description>
-                  </div>
-                  <div>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        deleteCoverage(coverage.id);
-                      }}
-                      variant="ghost"
-                      size="icon"
-                    >
-                      <TrashIcon className="text-red-600" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Coverage Id</Label>
-                    <p className="text-sm font-medium">{coverage.identifier}</p>
-                  </div>
-                  <div>
-                    <Label>Subscriber Id</Label>
-                    <p className="text-sm font-medium">
-                      {coverage.subscriber_id}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Payor Id</Label>
-                    <p className="text-sm font-medium">
-                      {coverage.payor.identifier}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Payor Name</Label>
-                    <p className="text-sm font-medium">{coverage.payor.name}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {coverages?.results.map((coverage, i) => {
+              const status = getCoverageVerificationStatus(coverage);
+              return (
+                <Card key={coverage.id} className="w-full">
+                  <CardHeader className="flex flex-row justify-between items-center">
+                    <div className="space-y-1">
+                      <CardTitle>Coverage {i}</CardTitle>
+                      <Description className="text-sm text-gray-500">
+                        Added on{" "}
+                        {formatDate(coverage.created_date, "dd MMM yyyy")}
+                      </Description>
+                      <Description>
+                        <Badge
+                          className={cn("capitalize text-xs", {
+                            "bg-green-200 text-green-600":
+                              status === "verified",
+                            "bg-red-200 text-red-600": status === "rejected",
+                            "bg-yellow-200 text-yellow-600":
+                              status === "pending",
+                          })}
+                        >
+                          {status}{" "}
+                          <span className="normal-case">
+                            on{" "}
+                            {formatDate(
+                              coverage.latest_coverage_eligibility_response
+                                ?.created_date!,
+                              "dd MMM yyyy"
+                            )}
+                          </span>
+                        </Badge>
+                      </Description>
+                    </div>
+                    <div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          deleteCoverage(coverage.id);
+                        }}
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <TrashIcon className="text-red-600" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Coverage Id</Label>
+                      <p className="text-sm font-medium">
+                        {coverage.identifier}
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Subscriber Id</Label>
+                      <p className="text-sm font-medium">
+                        {coverage.subscriber_id}
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Payor Id</Label>
+                      <p className="text-sm font-medium">
+                        {coverage.payor.identifier}
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Payor Name</Label>
+                      <p className="text-sm font-medium">
+                        {coverage.payor.name}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </ScrollArea>
       </DialogContent>

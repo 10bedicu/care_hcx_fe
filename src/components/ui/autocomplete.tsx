@@ -22,6 +22,7 @@ import useBreakpoints from "@/hooks/use-breakpoints";
 
 interface AutoCompleteOption {
   label: string;
+  display?: React.ReactNode;
   value: string;
 }
 
@@ -84,7 +85,7 @@ export default function Autocomplete({
                   value === option.value ? "opacity-100" : "opacity-0"
                 )}
               />
-              {option.label}
+              {option.display ?? option.label}
             </CommandItem>
           ))}
         </CommandGroup>

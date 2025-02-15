@@ -1,4 +1,4 @@
-import { Coding, Period } from "./base";
+import { Coding, HcxError, Period } from "./base";
 
 import { Condition } from "./condition";
 import { Coverage } from "./coverage";
@@ -109,6 +109,8 @@ export type Claim = {
   patient_paid?: number;
   total?: number;
 
+  latest_claim_response?: ClaimResponse;
+
   created_date?: string;
   modified_date?: string;
   created_by?: User;
@@ -117,4 +119,40 @@ export type Claim = {
   latest_response?: Record<string, unknown>;
 };
 
-export type ClaimResponse = {};
+export const CLAIM_RESPONSE_OUTCOME = [
+  "complete",
+  "error",
+  "partial",
+  "queued",
+] as const;
+export type CoverageEligibilityResponseOutcome =
+  (typeof CLAIM_RESPONSE_OUTCOME)[number];
+
+export type ClaimResponse = {
+  id: string;
+  request: Claim;
+  outcome: CoverageEligibilityResponseOutcome;
+  disposition?: string;
+  error?: HcxError;
+  total_amount?: number;
+
+  created_date: string;
+  modified_date: string;
+};
+
+export const getClaimApprovalStatus = (claim?: Claim) => {
+  if (!claim) return "pending";
+
+  if (
+    claim.latest_claim_response?.outcome === "error" ||
+    claim.latest_claim_response?.error
+  ) {
+    return "rejected";
+  }
+
+  if (claim.latest_claim_response?.outcome === "complete") {
+    return "approved";
+  }
+
+  return "pending";
+};
