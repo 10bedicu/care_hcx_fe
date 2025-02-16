@@ -613,14 +613,16 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                               status === "pending",
                           })}
                         >
-                          {status}{" "}
-                          <span className="normal-case">
-                            on{" "}
-                            {formatDate(
-                              coverage.latest_coverage_eligibility_response
-                                ?.created_date!
-                            )}
-                          </span>
+                          {status}
+                          {status !== "pending" && (
+                            <span className="normal-case ml-1">
+                              on{" "}
+                              {formatDate(
+                                coverage.latest_coverage_eligibility_response
+                                  ?.created_date!
+                              )}
+                            </span>
+                          )}
                         </Badge>
                       </Description>
                     </div>
