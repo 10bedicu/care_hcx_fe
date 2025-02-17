@@ -56,6 +56,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn, formatCurrency, formatDate, toast } from "@/lib/utils";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -627,17 +633,35 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                       </Description>
                     </div>
                     <div>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          deleteCoverage(coverage.id);
-                        }}
-                        disabled={deleteCoverageIsPending}
-                        variant="ghost"
-                        size="icon"
-                      >
-                        <TrashIcon className="text-red-600" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  deleteCoverage(coverage.id);
+                                }}
+                                disabled={
+                                  deleteCoverageIsPending ||
+                                  status !== "pending"
+                                }
+                                variant="ghost"
+                                size="icon"
+                              >
+                                <TrashIcon className="text-red-600" />
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {status !== "pending" && (
+                            <TooltipContent>
+                              <p>
+                                Coverage cannot be deleted once it is verified.
+                              </p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-2 gap-4">
