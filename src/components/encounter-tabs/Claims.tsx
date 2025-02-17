@@ -7,6 +7,7 @@ import {
   CircleMinusIcon,
   FileIcon,
   IndianRupeeIcon,
+  Loader2Icon,
   PaperclipIcon,
   TrashIcon,
   XCircleIcon,
@@ -40,7 +41,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FC, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import {
   Form,
   FormControl,
@@ -773,6 +774,39 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
     control: form.control,
   });
 
+  const { data: priorClaim, isLoading: priorClaimIsLoading } = useQuery({
+    queryKey: ["claims", encounter.id, "latest"],
+    queryFn: () =>
+      apis.claim.latest({
+        encounter: encounter.id,
+      }),
+    enabled: !!encounter.id,
+  });
+
+  useEffect(() => {
+    if (priorClaim?.item) {
+      form.setValue(
+        "items",
+        priorClaim.item
+          .filter((item) => item.category)
+          .map((item) => ({
+            category: {
+              code: item.category!.code!,
+              display: item.category!.display!,
+              system: item.category!.system!,
+            },
+            product_or_service: {
+              code: item.product_or_service.code!,
+              display: item.product_or_service.display!,
+              system: item.product_or_service.system!,
+            },
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+          }))
+      );
+    }
+  }, [priorClaim]);
+
   const {
     Input: FileInput,
     files,
@@ -873,6 +907,15 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
         attachment,
       })),
     });
+  }
+
+  if (priorClaimIsLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2">
+        <Loader2Icon className="animate-spin" />
+        <span>Auto populating Products and Services from previous claim.</span>
+      </div>
+    );
   }
 
   return (

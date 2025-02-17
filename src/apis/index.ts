@@ -89,6 +89,10 @@ export const apis = {
       );
     },
 
+    latest: async (query?: { encounter?: string }) => {
+      return await request<Claim>("/api/hcx/claim/latest" + queryString(query));
+    },
+
     get: async (id: string) => {
       return await request<Claim>(`/api/hcx/claim/${id}/`);
     },
