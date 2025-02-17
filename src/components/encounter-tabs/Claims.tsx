@@ -864,6 +864,12 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
       })),
       supporting_info: attachments.map((attachment, i) => ({
         sequence: i + 1,
+        category: {
+          system:
+            "http://hcxprotocol.io/codes/claim-supporting-info-categories",
+          code: "ATT",
+          display: "Attachment",
+        },
         attachment,
       })),
     });

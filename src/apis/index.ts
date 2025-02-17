@@ -111,12 +111,12 @@ export const apis = {
         category: {
           code: string;
           system: string;
-          display: string;
+          display?: string;
         };
         product_or_service: {
           system: string;
           code: string;
-          display: string;
+          display?: string;
         };
         quantity: number;
         unit_price: number;
@@ -126,7 +126,7 @@ export const apis = {
         category?: {
           code: string;
           system: string;
-          display: string;
+          display?: string;
         };
         value?: string;
         attachment?: string;
