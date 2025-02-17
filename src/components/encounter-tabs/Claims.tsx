@@ -305,7 +305,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
         </CardHeader>
         <CollapsibleContent>
           <CardContent>
-            <div className="-mx-6 mt-8 flow-root sm:mx-0">
+            <div className="max-sm:-mx-6 mt-8 flow-root">
               <table className="min-w-full divide-y divide-secondary-300">
                 <thead>
                   <tr>
@@ -529,7 +529,10 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     name="identifier"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel>Coverage Id</FormLabel>
+                        <FormLabel>
+                          Coverage Id
+                          <span className="text-red-500 text-sm ml-0.5">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input placeholder="Coverage Id" {...field} />
                         </FormControl>
@@ -542,7 +545,10 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     name="subscriber_id"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel>Subscriber Id</FormLabel>
+                        <FormLabel>
+                          Subscriber Id
+                          <span className="text-red-500 text-sm ml-0.5">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Input placeholder="Subscriber Id" {...field} />
                         </FormControl>
@@ -555,7 +561,10 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     name="payor_identifier"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 sm:col-span-2">
-                        <FormLabel>Payor</FormLabel>
+                        <FormLabel>
+                          Payor
+                          <span className="text-red-500 text-sm ml-0.5">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Autocomplete
                             {...field}
@@ -605,7 +614,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                 <Card key={coverage.id} className="w-full">
                   <CardHeader className="flex flex-row justify-between items-center">
                     <div className="space-y-1">
-                      <CardTitle>Coverage {i}</CardTitle>
+                      <CardTitle>Coverage {i + 1}</CardTitle>
                       <Description className="text-sm text-gray-500">
                         Added on {formatDate(coverage.created_date)}
                       </Description>
@@ -874,7 +883,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   render={({ field }) => (
                     <div className="flex justify-between items-center gap-2">
                       <FormItem className="space-y-1.5 w-full">
-                        <FormLabel>Category</FormLabel>
+                        <FormLabel>
+                          Category
+                          <span className="text-red-500 text-sm ml-0.5">*</span>
+                        </FormLabel>
                         <FormControl>
                           <Autocomplete
                             options={CLAIM_ITEM_CATEGORIES.map((category) => ({
@@ -921,7 +933,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   name={`items.${index}.product_or_service.code`}
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <FormLabel>Code</FormLabel>
+                      <FormLabel>
+                        Code
+                        <span className="text-red-500 text-sm ml-0.5">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -935,7 +950,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   name={`items.${index}.product_or_service.display`}
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <FormLabel>Title</FormLabel>
+                      <FormLabel>
+                        Title
+                        <span className="text-red-500 text-sm ml-0.5">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -949,7 +967,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   name={`items.${index}.unit_price`}
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <FormLabel>Price / Unit</FormLabel>
+                      <FormLabel>
+                        Price / Unit
+                        <span className="text-red-500 text-sm ml-0.5">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -971,7 +992,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   name={`items.${index}.quantity`}
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
-                      <FormLabel>Quantity</FormLabel>
+                      <FormLabel>
+                        Quantity
+                        <span className="text-red-500 text-sm ml-0.5">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -1017,8 +1041,8 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                           display: "",
                           system: "https://pmjay.gov.in/hbp-package-code",
                         },
-                        unit_price: 0,
-                        quantity: 1,
+                        unit_price: undefined as unknown as number,
+                        quantity: undefined as unknown as number,
                       });
                     }}
                     placeholder="Select a category"
@@ -1096,7 +1120,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             name="use"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
+                <FormLabel>
+                  Type
+                  <span className="text-red-500 text-sm ml-0.5">*</span>
+                </FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
@@ -1127,7 +1154,10 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             name="priority"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Priority</FormLabel>
+                <FormLabel>
+                  Priority
+                  <span className="text-red-500 text-sm ml-0.5">*</span>
+                </FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}

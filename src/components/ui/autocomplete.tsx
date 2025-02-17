@@ -111,7 +111,7 @@ export default function Autocomplete({
           type="button"
           onClick={() => setOpen(true)}
         >
-          <span className="overflow-hidden">
+          <span className="max-sm:max-w-48 truncate">
             {value
               ? options.find((option) => option.value === value)?.label
               : placeholder}
