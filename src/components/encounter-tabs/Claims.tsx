@@ -510,7 +510,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
       <DialogTrigger asChild>
         <Button variant="outline">Manage Coverages</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-fit overflow-auto">
         <DialogHeader>
           <DialogTitle>Manage Coverages</DialogTitle>
           <DialogDescription>
