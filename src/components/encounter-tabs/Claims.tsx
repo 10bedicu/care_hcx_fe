@@ -480,6 +480,19 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
     });
 
   function onSubmit(values: z.infer<typeof coverageFormSchema>) {
+    const isDuplicate = coverages?.results.some(
+      (coverage) =>
+        coverage.identifier === values.identifier &&
+        coverage.subscriber_id === values.subscriber_id
+    );
+
+    if (isDuplicate) {
+      toast.error(
+        "This Coverage ID and Subscriber ID combination already exists. Please enter a unique combination."
+      );
+      return;
+    }
+
     createCoverage({
       beneficiary: patientId,
       identifier: values.identifier,
@@ -798,7 +811,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             product_or_service: {
               code: item.product_or_service.code!,
               display: item.product_or_service.display!,
-              system: item.product_or_service.system!,
+              system: "https://pmjay.gov.in/hbp-package-code",
             },
             quantity: item.quantity,
             unit_price: item.unit_price,
