@@ -811,7 +811,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             product_or_service: {
               code: item.product_or_service.code!,
               display: item.product_or_service.display!,
-              system: "https://pmjay.gov.in/hbp-package-code",
+              system: item.product_or_service.system!,
             },
             quantity: item.quantity,
             unit_price: item.unit_price,
