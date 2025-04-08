@@ -510,7 +510,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
       <DialogTrigger asChild>
         <Button variant="outline">Manage Coverages</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-fit overflow-auto">
         <DialogHeader>
           <DialogTitle>Manage Coverages</DialogTitle>
           <DialogDescription>
@@ -689,15 +689,33 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     </div>
                     <div>
                       <Label>Payor Id</Label>
-                      <p className="text-sm font-medium">
-                        {coverage.payor.identifier}
-                      </p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm font-medium truncate">
+                              {coverage.payor.identifier}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{coverage.payor.identifier}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <div>
                       <Label>Payor Name</Label>
-                      <p className="text-sm font-medium">
-                        {coverage.payor.name}
-                      </p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm font-medium truncate">
+                              {coverage.payor.name}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{coverage.payor.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </CardContent>
                 </Card>
