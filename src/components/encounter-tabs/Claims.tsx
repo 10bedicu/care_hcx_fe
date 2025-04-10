@@ -127,6 +127,7 @@ type CreateClaimCardProps = {
 
 const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
   const [coverage, setCoverage] = useState<string>();
+  const { t } = useTranslation(I18NNAMESPACE);
 
   const { data: coverages } = useQuery({
     queryKey: ["coverages", encounter.patient.id],
@@ -166,7 +167,7 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
   return (
     <div className="space-y-6">
       <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
-        <h2 className="mb-2">Check Coverage Eligibility</h2>
+        <h2 className="mb-2">{t("check_coverage_eligibility")}</h2>
         <ManageCoverages patientId={encounter.patient.id} />
       </div>
       <div className="flex sm:flex-row flex-col gap-4 justify-between items-center">
@@ -226,7 +227,7 @@ const CreateClaimCard: FC<CreateClaimCardProps> = ({ encounter }) => {
             checkCoverageEligibility();
           }}
         >
-          Check Eligibility
+          {t("check_eligibility")}
         </Button>
       </div>
 
@@ -262,7 +263,9 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="capitalize">{_claim.use}</CardTitle>
-              <CardDescription>Claim ID: #{_claim.id}</CardDescription>
+              <CardDescription>
+                {t("claim_id")}: #{_claim.id}
+              </CardDescription>
             </div>
             <Badge
               className={cn("capitalize text-xs", {
@@ -389,7 +392,9 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
           <div className="flex space-x-4 text-sm text-gray-500">
             <div className="flex items-center gap-1.5">
               <CalendarIcon className="w-4 h-4" />
-              <span>Created On: {formatDate(_claim.created_date!)}</span>
+              <span>
+                {t("created_on")}: {formatDate(_claim.created_date!)}
+              </span>
             </div>
             {status !== "pending" && (
               <div className="flex items-center gap-1.5">
@@ -413,7 +418,7 @@ const ClaimCard: FC<ClaimCardProps> = ({ claim: _claim }) => {
               ) : (
                 <ChevronDownIcon className="h-4 w-4" />
               )}
-              <span className="sr-only">Toggle details</span>
+              <span className="sr-only">{t("toggle_details")}</span>
             </Button>
           </CollapsibleTrigger>
         </CardFooter>
@@ -444,6 +449,7 @@ const coverageFormSchema = z.object({
 
 const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
   const queryClient = useQueryClient();
+  const { t } = useTranslation(I18NNAMESPACE);
 
   const form = useForm<z.infer<typeof coverageFormSchema>>({
     resolver: zodResolver(coverageFormSchema),
@@ -464,7 +470,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
         queryClient.invalidateQueries({
           queryKey: ["coverages", patientId],
         });
-        toast.success("Coverage added successfully");
+        toast.success(t("coverage_added_successfully"));
       },
     });
 
@@ -475,7 +481,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
         queryClient.invalidateQueries({
           queryKey: ["coverages", patientId],
         });
-        toast.success("Coverage deleted successfully");
+        toast.success(t("coverage_deleted_successfully"));
       },
     });
 
@@ -487,9 +493,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
     );
 
     if (isDuplicate) {
-      toast.error(
-        "This Coverage ID and Subscriber ID combination already exists. Please enter a unique combination."
-      );
+      toast.error(t("coverage_duplicate_error"));
       return;
     }
 
@@ -521,18 +525,18 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">Manage Coverages</Button>
+        <Button variant="outline">{t("manage_coverages")}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Manage Coverages</DialogTitle>
+          <DialogTitle>{t("manage_coverages")}</DialogTitle>
           <DialogDescription>
-            Add or remove coverages for the patient
+            {t("manage_coverages_description")}
           </DialogDescription>
         </DialogHeader>
         <Card>
           <CardHeader>
-            <CardTitle>Add Coverage</CardTitle>
+            <CardTitle>{t("add_coverage")}</CardTitle>
           </CardHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -544,7 +548,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
                         <FormLabel>
-                          Coverage Id
+                          {t("coverage_id")}
                           <span className="text-red-500 text-sm ml-0.5">*</span>
                         </FormLabel>
                         <FormControl>
@@ -560,7 +564,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
                         <FormLabel>
-                          Subscriber Id
+                          {t("subscriber_id")}
                           <span className="text-red-500 text-sm ml-0.5">*</span>
                         </FormLabel>
                         <FormControl>
@@ -576,7 +580,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                     render={({ field }) => (
                       <FormItem className="space-y-1.5 sm:col-span-2">
                         <FormLabel>
-                          Payor
+                          {t("payor")}
                           <span className="text-red-500 text-sm ml-0.5">*</span>
                         </FormLabel>
                         <FormControl>
@@ -614,7 +618,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                   type="submit"
                   className="w-full"
                 >
-                  Add Coverage
+                  {t("add_coverage")}
                 </Button>
               </CardFooter>
             </form>
@@ -628,9 +632,11 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                 <Card key={coverage.id} className="w-full">
                   <CardHeader className="flex flex-row justify-between items-center">
                     <div className="space-y-1">
-                      <CardTitle>Coverage {i + 1}</CardTitle>
+                      <CardTitle>
+                        {t("coverage_number", { number: i + 1 })}
+                      </CardTitle>
                       <Description className="text-sm text-gray-500">
-                        Added on {formatDate(coverage.created_date)}
+                        {t("added_on")} {formatDate(coverage.created_date)}
                       </Description>
                       <Description>
                         <Badge
@@ -678,9 +684,7 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                           </TooltipTrigger>
                           {status !== "pending" && (
                             <TooltipContent>
-                              <p>
-                                Coverage cannot be deleted once it is verified.
-                              </p>
+                              <p>{t("coverage_cannot_be_deleted")}</p>
                             </TooltipContent>
                           )}
                         </Tooltip>
@@ -689,25 +693,25 @@ const ManageCoverages: FC<ManageCoveragesProps> = ({ patientId }) => {
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <Label>Coverage Id</Label>
+                      <Label>{t("coverage_id")}</Label>
                       <p className="text-sm font-medium">
                         {coverage.identifier}
                       </p>
                     </div>
                     <div>
-                      <Label>Subscriber Id</Label>
+                      <Label>{t("subscriber_id")}</Label>
                       <p className="text-sm font-medium">
                         {coverage.subscriber_id}
                       </p>
                     </div>
                     <div>
-                      <Label>Payor Id</Label>
+                      <Label>{t("payor_id")}</Label>
                       <p className="text-sm font-medium">
                         {coverage.payor.identifier}
                       </p>
                     </div>
                     <div>
-                      <Label>Payor Name</Label>
+                      <Label>{t("payor_name")}</Label>
                       <p className="text-sm font-medium">
                         {coverage.payor.name}
                       </p>
@@ -771,6 +775,7 @@ const claimFormSchema = z.object({
 
 const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
   const queryClient = useQueryClient();
+  const { t } = useTranslation(I18NNAMESPACE);
 
   const form = useForm<z.infer<typeof claimFormSchema>>({
     resolver: zodResolver(claimFormSchema),
@@ -857,7 +862,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
   const { mutate: submitClaim } = useMutation({
     mutationFn: apis.claim.submit,
     onSuccess: () => {
-      toast.success("Claim submitted successfully");
+      toast.success(t("claim_submitted_successfully"));
     },
   });
 
@@ -869,7 +874,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
       queryClient.invalidateQueries({
         queryKey: ["claims", encounter.id],
       });
-      toast.success("Claim created successfully");
+      toast.success(t("claim_created_successfully"));
       submitClaim(data.id);
     },
   });
@@ -884,7 +889,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
     }
 
     if (!coverage) {
-      toast.error("Coverage is required to create a claim");
+      toast.error(t("coverage_required_error"));
       return;
     }
 
@@ -926,7 +931,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
     return (
       <div className="flex items-center justify-center gap-2">
         <Loader2Icon className="animate-spin" />
-        <span>Auto populating Products and Services from previous claim.</span>
+        <span>{t("auto_populating_previous_claim")}</span>
       </div>
     );
   }
@@ -946,7 +951,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                     <div className="flex justify-between items-center gap-2">
                       <FormItem className="space-y-1.5 w-full">
                         <FormLabel>
-                          Category
+                          {t("category")}
                           <span className="text-red-500 text-sm ml-0.5">*</span>
                         </FormLabel>
                         <FormControl>
@@ -987,7 +992,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
               </CardHeader>
               <CardContent className="grid sm:grid-cols-2 gap-4">
                 <CardTitle className="sm:col-span-2">
-                  Product or Service
+                  {t("product_or_service")}
                 </CardTitle>
                 <FormField
                   key={field.id}
@@ -996,7 +1001,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel>
-                        Code
+                        {t("code")}
                         <span className="text-red-500 text-sm ml-0.5">*</span>
                       </FormLabel>
                       <FormControl>
@@ -1013,7 +1018,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel>
-                        Title
+                        {t("title")}
                         <span className="text-red-500 text-sm ml-0.5">*</span>
                       </FormLabel>
                       <FormControl>
@@ -1030,7 +1035,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel>
-                        Price / Unit
+                        {t("price_per_unit")}
                         <span className="text-red-500 text-sm ml-0.5">*</span>
                       </FormLabel>
                       <FormControl>
@@ -1055,7 +1060,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   render={({ field }) => (
                     <FormItem className="space-y-1.5">
                       <FormLabel>
-                        Quantity
+                        {t("quantity")}
                         <span className="text-red-500 text-sm ml-0.5">*</span>
                       </FormLabel>
                       <FormControl>
@@ -1164,7 +1169,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             >
               <Label className="button-size-default button-shape-square button-primary-default inline-flex h-min w-full cursor-pointer items-center justify-center gap-2 whitespace-pre font-medium outline-offset-1 transition-all duration-200 ease-in-out">
                 <PaperclipIcon className="h-5 w-5" />
-                <span>Add Attachments</span>
+                <span>{t("add_attachments")}</span>
                 <FileInput />
               </Label>
             </Button>
@@ -1183,7 +1188,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Type
+                  {t("type")}
                   <span className="text-red-500 text-sm ml-0.5">*</span>
                 </FormLabel>
                 <Select
@@ -1217,7 +1222,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Priority
+                  {t("priority")}
                   <span className="text-red-500 text-sm ml-0.5">*</span>
                 </FormLabel>
                 <Select
@@ -1247,7 +1252,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
         </div>
 
         <Button loading={createClaimIsPending} type="submit" className="w-full">
-          Create and Submit Claim
+          {t("create_and_submit_claim")}
         </Button>
       </form>
     </Form>
