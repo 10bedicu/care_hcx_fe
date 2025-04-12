@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import federation from "@originjs/vite-plugin-federation";
 import path from "path";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
@@ -13,6 +14,7 @@ export default defineConfig({
       },
       shared: ["react", "react-dom", "react-i18next", "@tanstack/react-query"],
     }),
+    tailwindcss(),
     react(),
   ],
   build: {
