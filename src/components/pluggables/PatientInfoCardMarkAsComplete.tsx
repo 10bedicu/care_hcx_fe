@@ -45,31 +45,33 @@ const PatientInfoCardMarkAsComplete: FC<PatientInfoCardMarkAsCompleteProps> = ({
   }
 
   return (
-    <Alert variant="warning">
-      <ChevronRightIcon className="h-4 w-4" />
-      <AlertTitle className="font-medium text-base">
-        You haven't made a claim for this encounter yet.
-      </AlertTitle>
-      <AlertDescription>
-        {!!stats?.preauthorization && !stats?.claim && (
-          <>
-            <span>
-              You have made a pre-authorization check for this encounter, but
-              you haven't made a claim yet.
-            </span>
-            <br />
-          </>
-        )}
-        To make an insurance claim, Please go to the{" "}
-        <a
-          href={`/facility/${encounter.facility.id}/encounter/${encounter.id}/claims`}
-          className="text-blue-500 underline inline-flex gap-0.5"
-        >
-          Claims Tab <ExternalLinkIcon className="h-2.5 w-2.5 inline" />
-        </a>{" "}
-        and raise a claim.
-      </AlertDescription>
-    </Alert>
+    <div className="hcx-container">
+      <Alert variant="warning">
+        <ChevronRightIcon className="h-4 w-4" />
+        <AlertTitle className="font-medium text-base">
+          You haven't made a claim for this encounter yet.
+        </AlertTitle>
+        <AlertDescription>
+          {!!stats?.preauthorization && !stats?.claim && (
+            <>
+              <span>
+                You have made a pre-authorization check for this encounter, but
+                you haven't made a claim yet.
+              </span>
+              <br />
+            </>
+          )}
+          To make an insurance claim, Please go to the{" "}
+          <a
+            href={`/facility/${encounter.facility.id}/encounter/${encounter.id}/claims`}
+            className="text-blue-500 underline inline-flex gap-0.5"
+          >
+            Claims Tab <ExternalLinkIcon className="h-2.5 w-2.5 inline" />
+          </a>{" "}
+          and raise a claim.
+        </AlertDescription>
+      </Alert>
+    </div>
   );
 };
 
