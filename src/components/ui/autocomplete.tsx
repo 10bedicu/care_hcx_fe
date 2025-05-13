@@ -61,7 +61,7 @@ export default function Autocomplete({
         placeholder="Search option..."
         disabled={disabled}
         onValueChange={onSearch}
-        className="outline-none border-none ring-0 shadow-none"
+        className="outline-hidden border-none ring-0 shadow-none"
       />
       <CommandList>
         <CommandEmpty>{noOptionsMessage}</CommandEmpty>
@@ -147,7 +147,7 @@ export default function Autocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="sm:w-full p-0 pointer-events-auto w-[var(--radix-popover-trigger-width)]"
+        className="sm:w-full p-0 pointer-events-auto w-(--radix-popover-trigger-width)"
         align={align}
       >
         <Command>{commandContent}</Command>

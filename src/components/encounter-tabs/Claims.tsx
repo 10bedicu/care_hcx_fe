@@ -105,7 +105,7 @@ export const ClaimsEncounterTab: FC<EncounterTabProps> = ({ encounter }) => {
   });
 
   return (
-    <div className="relative flex flex-col pb-2">
+    <div className="hcx-container relative flex flex-col pb-2">
       <div className="mx-auto flex w-full max-w-5xl flex-col justify-center gap-16">
         <div className="rounded-lg bg-white p-8">
           <CreateClaimCard encounter={encounter} />
@@ -1126,7 +1126,7 @@ const ClaimForm: FC<ClaimFormProps> = ({ encounter, coverage }) => {
                   </div>
                   <div>
                     <p className="w-24 truncate text-sm">{file.name}</p>
-                    <div className="flex !items-center gap-2.5">
+                    <div className="flex items-center! gap-2.5">
                       <p className="text-xs text-gray-500">
                         {(file.size / 1024).toFixed(2)} KB
                       </p>
