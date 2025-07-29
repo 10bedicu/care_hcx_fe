@@ -1,4 +1,4 @@
-export const I18NNAMESPACE = "care_hcx_fe";
+export const I18NNAMESPACE = "care_nhcx_fe";
 
 export const CLAIM_ITEM_CATEGORIES = [
   {

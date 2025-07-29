@@ -6,8 +6,10 @@ import {
 } from "@/types/file_uploaad";
 import { queryString, request } from "./request";
 
+import { AbhaNumber } from "@/types/abha_number";
 import { Claim } from "@/types/claim";
 import { PaginatedResponse } from "./types";
+import { Policy } from "@/types/policy";
 
 export const apis = {
   coverage: {
@@ -69,9 +71,30 @@ export const apis = {
     },
 
     delete: async (id: string) => {
-      return await request<{}>(`/api/hcx/coverage/${id}/`, {
+      return await request<object>(`/api/hcx/coverage/${id}/`, {
         method: "DELETE",
       });
+    },
+  },
+
+  coverageEligibilityRequest: {
+    list: async (query?: {
+      patient?: string;
+      ordering?:
+        | "created_date"
+        | "-created_date"
+        | "modified_date"
+        | "-modified_date";
+    }) => {
+      return await request<PaginatedResponse<CoverageEligibilityRequest>>(
+        "/api/hcx/coverage-eligibility-request/" + queryString(query)
+      );
+    },
+
+    get: async (id: string) => {
+      return await request<CoverageEligibilityRequest>(
+        `/api/hcx/coverage-eligibility-request/${id}/`
+      );
     },
   },
 
@@ -164,6 +187,24 @@ export const apis = {
           method: "POST",
         }
       );
+    },
+  },
+
+  gateway: {
+    getPolicies: async (body: {
+      identifiertype: "MobileNo" | "AbhaNumber" | "MemberId";
+      identifiervalue: string;
+    }) => {
+      return await request<Policy[]>(`/api/nhcx/gateway/get_policies/`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
+  },
+
+  abhaNumber: {
+    get: async (patientId: string) => {
+      return await request<AbhaNumber>(`/api/abdm/abha_number/${patientId}/`);
     },
   },
 };

@@ -93,10 +93,12 @@ export type CoverageEligibilityRequestPriority =
 
 export type CoverageEligibilityRequest = {
   id: string;
-  purpose: CoverageEligibilityRequestPurpose[];
+  purpose: CoverageEligibilityRequestPurpose;
   priority: CoverageEligibilityRequestPriority;
   facility?: Facility;
-  coverage: Coverage;
+  coverage_id: string;
+
+  latest_coverage_eligibility_response?: CoverageEligibilityResponse;
 
   created_date: string;
   modified_date: string;
@@ -124,7 +126,9 @@ export type CoverageEligibilityResponse = {
   modified_date: string;
 };
 
-export const getCoverageVerificationStatus = (coverage?: Coverage) => {
+export const getCoverageVerificationStatus = (
+  coverage?: Coverage | CoverageEligibilityRequest
+) => {
   if (!coverage) return "pending";
 
   if (

@@ -42,3 +42,14 @@ export const formatDate = (date?: string) => {
 
   return _formatDate(date, "dd MMM yyyy");
 };
+
+export const calculateAge = (dateOfBirth?: string, yearOfBirth?: number) => {
+  if (!dateOfBirth && !yearOfBirth) {
+    return "NA";
+  }
+
+  const year = yearOfBirth ? yearOfBirth : new Date(dateOfBirth!).getFullYear();
+  const age = new Date().getFullYear() - year;
+
+  return `${age} Y`;
+};
